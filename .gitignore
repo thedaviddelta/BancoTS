@@ -1,3 +1,9 @@
+# JS out files
+out/
+
+# Electron build
+build/
+
 # Logs
 logs
 *.log
