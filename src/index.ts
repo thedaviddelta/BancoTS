@@ -1,6 +1,8 @@
 import { remote } from "electron";
+import bcrypt from "bcryptjs";
 import Cuenta from "./Cuenta";
 import Cliente from "./Cliente";
+import { get, save } from "./Almacenar";
 export = {};
 
 let currentUser: Cliente;
@@ -9,6 +11,16 @@ let currentAcc: Cuenta;
 const clientes: Cliente[] = [];
 const div: Element = document.getElementsByClassName("container-fluid")[0];
 const win: Electron.BrowserWindow = remote.getCurrentWindow();
+
+window.addEventListener("beforeunload", (e) => {
+    try {
+        save(clientes);
+    } catch (error) {
+        remote.dialog.showMessageBox(win, { message: "Error al guardar los datos" });
+        e.returnValue = false;
+    }
+});
+get(clientes);
 
 const mainMenu = (): void => {
     div.innerHTML = `
@@ -94,7 +106,7 @@ const signup = (): void => {
                 create.className = "btn btn-lg btn-danger";
                 create.innerHTML = "Error";
             } else {
-                clientes.push(new Cliente(nom, pass));
+                clientes.push(new Cliente(nom, bcrypt.hashSync(pass, 11)));
 
                 create.className = "btn btn-lg btn-info";
                 create.innerHTML = "Creado";
@@ -159,7 +171,7 @@ const login = (): void => {
             const nom: string = (<HTMLInputElement>document.getElementById("nom")).value;
             const pass: string = (<HTMLInputElement>document.getElementById("pass")).value;
 
-            const found: Cliente | undefined = clientes.find(cl => cl.nombre === nom && cl.pass === pass);
+            const found: Cliente | undefined = clientes.find(cl => cl.nombre === nom && bcrypt.compareSync(pass, cl.pass));
 
             if (!found) {
                 enter.className = "btn btn-lg btn-danger";
